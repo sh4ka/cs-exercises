@@ -1,8 +1,9 @@
 import platform
+import unittest
 from random import randrange, randint
 
 class Node:
-    def __init__(self, init_data, value):
+    def __init__(self, init_data, value=None):
         self.data = init_data
         self.value = value
         self.next = None
@@ -81,6 +82,22 @@ class UnorderedList:
         if return_removed is True:
             return current
         return found
+        
+    def unset(self, item):
+        current = self.head
+        previous = None
+        found = False
+        ended = False
+        while not found and not ended:
+            if current.get_data() == item:
+                found = True
+            else:
+                previous = current
+                current = current.get_next()
+            if current.get_next() is None:
+                ended = True
+        if found:
+            current.set_data('False')
 
     def get(self):
         ret_arr = []
@@ -113,8 +130,11 @@ class Hashtable(object):
     words = []
     collisions = 0
     
-    def __init__(self, n):
+    wfile = None # file handle
+    
+    def __init__(self, n, sparseness=4):
         self.n = n
+        self.sparseness = sparseness
         self.m = self.n * self.sparseness
         self.table = [None] * self.m
         self.prime = self.get_prime(len(self.table))
@@ -126,8 +146,8 @@ class Hashtable(object):
         self.prepare_words(self.n)
     
     def prepare_words(self, n):
-        wfile = open('/usr/share/dict/words')
-        self.words = wfile.read().split()[:n]
+        self.wfile = open('/usr/share/dict/words')
+        self.words = self.wfile.read().split()[:n]
     
     def get_w_arch(self):
         word_size = platform.architecture()
@@ -160,7 +180,7 @@ class Hashtable(object):
                 return i
                 
                 
-    def resize_table(self, m, n):
+    def resize_table(self, n):
         newtable = [None] * n
         self.table.extend(newtable)
         return self.table
@@ -197,19 +217,57 @@ class Hashtable(object):
         return key
         
     
+    def exists_item(self, item):
+        key = self.get_hashkey(item)
+        if self.table[key] is not None:
+            return self.table[key].search(item) is not None
+        
+    
     def get_item(self, item):
         key = self.get_hashkey(item)
         if self.table[key] is not None:
             return self.table[key].search(item)
         
     
-hashtable = Hashtable(100)
-for index, word in enumerate(hashtable.words):
-    print('Key:{} -> value:{} encodes to {}'.format(word, index, hashtable.add_item(word, index)))
-    
+    def remove_item(self, item):
+        key = self.get_hashkey(item)
+        if self.table[key] is not None:
+            return self.table[key].unset(item)
+            
+    def closeFile(self):
+        self.wfile.close()
+        
 
-print('Collisions {}'.format(hashtable.collisions))
-print('Load factor is {}'.format(hashtable.get_alpha()))
-desired_item = hashtable.words[randint(0, 100)]
-print('Fetching random word from table -> {}'.format(desired_item))
-print('Value for Key->{} is {}'.format(desired_item, hashtable.get_item(desired_item)))
+class HashtableTest(unittest.TestCase):
+    
+    def setUp(self):
+        self.sut: Hashtable = Hashtable(1)
+
+    def test_table_n(self):
+        self.assertEqual(self.sut.n, 1)
+
+    def test_table_sparseness(self):
+        self.assertEqual(self.sut.sparseness, 4)
+
+    def test_table_m(self):
+        self.assertEqual(self.sut.m, 4) # default sparseness is 4
+
+    def test_table_size(self):
+        self.assertEqual(len(self.sut.table), 4)
+
+    def test_table_size(self):
+        self.assertEqual(len(self.sut.table), 4)
+
+    def test_table_extension(self):
+        self.sut.resize_table(1)
+        self.assertEqual(len(self.sut.table), 5)
+        
+    def test_key_division(self):
+        expectation = 100 % self.sut.prime
+        self.assertEqual(self.sut.get_hash_division(100), expectation)
+        
+    def tearDown(self):
+        self.sut.closeFile() # helper method to close file
+
+if __name__ == '__main__':
+    unittest.main()
