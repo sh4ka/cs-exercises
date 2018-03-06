@@ -122,25 +122,23 @@ class UnorderedList:
 class Hashtable(object):
     
     n = 0
-    m = 1
     table = []
+    new_table = []
     prime = 2
-    sparseness = 4
     w = 64
     words = []
     collisions = 0
     
     wfile = None # file handle
     
-    def __init__(self, n, sparseness=4):
+    def __init__(self, n):
         self.n = n
-        self.sparseness = sparseness
-        self.m = self.n * self.sparseness
+        self.m = 8
         self.table = [None] * self.m
         self.prime = self.get_prime(len(self.table))
         
-        self.a = randrange(1, 100)
-        self.b = randrange(1, 100)
+        self.a = randrange(0, 1)
+        self.b = randrange(0, 1)
         
         self.w = self.get_w_size()
         self.prepare_words(self.n)
@@ -178,12 +176,6 @@ class Hashtable(object):
         for i in range(len(is_prime)-1, -1, -1):
             if is_prime[i]:
                 return i
-                
-                
-    def resize_table(self, n):
-        newtable = [None] * n
-        self.table.extend(newtable)
-        return self.table
         
     
     def get_hash_division(self, key):
@@ -192,6 +184,7 @@ class Hashtable(object):
     # this is not working atm, but this is the theory:
     # [(a*key) % 2 ** self.w] >> (self.w - r)
     def get_hash_multiplication(self, key):
+        [(self.a*key) % 2 ** self.w] >> 2**(self.w - r)
         pass
         
     def get_hash_universal(self, key):
@@ -203,10 +196,11 @@ class Hashtable(object):
     
     def get_hashkey(self, word):
         prehashcode = hash(word)
-        return hashtable.get_hash_universal(prehashcode)
+        return self.get_hash_universal(prehashcode)
         
     
     def add_item(self, item, value):
+        self.consider_table_size(self.n+1)
         key = self.get_hashkey(item)
         if self.table[key] is not None:
             self.collisions += 1
@@ -214,6 +208,7 @@ class Hashtable(object):
         linked_list = UnorderedList()
         linked_list.add(item, value)
         self.table[key] = linked_list
+        self.n += 1
         return key
         
     
@@ -237,6 +232,27 @@ class Hashtable(object):
     def closeFile(self):
         self.wfile.close()
         
+    def consider_table_size(self, n):
+        if n > self.m: self.grow_table()
+        pass
+
+    def grow_table(self):
+        # m ->`m, grow table and rehash
+        # build new hash h`()
+        # rehash, for each item in the old table, insert a new item in the new table
+        # new table has to be 2m, not m+1
+        self.resize_table2m()
+        self.rehash_old_table()
+        pass
+    
+    def rehash_old_table(self):
+        for item in self.table:
+            pass
+                
+                
+    def resize_table2m(self):
+        self.new_table = [None] * (2 * self.m)
+        
 
 class HashtableTest(unittest.TestCase):
     
@@ -246,25 +262,26 @@ class HashtableTest(unittest.TestCase):
     def test_table_n(self):
         self.assertEqual(self.sut.n, 1)
 
-    def test_table_sparseness(self):
-        self.assertEqual(self.sut.sparseness, 4)
-
     def test_table_m(self):
-        self.assertEqual(self.sut.m, 4) # default sparseness is 4
+        self.assertEqual(self.sut.m, 8)
 
     def test_table_size(self):
-        self.assertEqual(len(self.sut.table), 4)
-
-    def test_table_size(self):
-        self.assertEqual(len(self.sut.table), 4)
+        self.assertEqual(len(self.sut.table), 8)
 
     def test_table_extension(self):
-        self.sut.resize_table(1)
-        self.assertEqual(len(self.sut.table), 5)
+        self.sut.resize_table2m()
+        self.assertEqual(len(self.sut.table), 16)
         
     def test_key_division(self):
         expectation = 100 % self.sut.prime
         self.assertEqual(self.sut.get_hash_division(100), expectation)
+        
+    def test_add_item(self):
+        item = 'test'
+        value = '0'
+        self.sut.add_item(item, value)
+        self.assertEqual(self.sut.collisions, 0)
+        self.sut.add_item(item, value)
         
     def tearDown(self):
         self.sut.closeFile() # helper method to close file
