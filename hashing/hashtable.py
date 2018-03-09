@@ -246,12 +246,19 @@ class Hashtable(object):
         pass
     
     def rehash_old_table(self):
-        for item in self.table:
-            pass
+        backup_table = self.table
+        self.table = self.new_table
+        self.prime = self.get_prime(len(self.table))
+        self.a = randrange(0, 1)
+        self.b = randrange(0, 1)
+        for value, item in enumerate(backup_table):
+            if item is not None:
+                self.add_item(item, value)
                 
                 
     def resize_table2m(self):
         self.new_table = [None] * (2 * self.m)
+        return self.new_table
         
 
 class HashtableTest(unittest.TestCase):
@@ -268,8 +275,10 @@ class HashtableTest(unittest.TestCase):
     def test_table_size(self):
         self.assertEqual(len(self.sut.table), 8)
 
-    def test_table_extension(self):
-        self.sut.resize_table2m()
+    def test_table_grow(self):
+        for idx, word in enumerate(self.sut.words):
+            self.sut.add_item(word, idx)
+        self.sut.grow_table()
         self.assertEqual(len(self.sut.table), 16)
         
     def test_key_division(self):
