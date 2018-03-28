@@ -238,8 +238,8 @@ class Hashtable(object):
 
     def grow_table(self):
         # m ->`m, grow table and rehash
-        # build new hash h`()
-        # rehash, for each item in the old table, insert a new item in the new table
+        # build new hash h`() so that for each item in the old table,
+        # insert a new item in the new table
         # new table has to be 2m, not m+1
         self.resize_table2m()
         self.rehash_old_table()
